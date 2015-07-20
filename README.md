@@ -1,3 +1,7 @@
+[![Circle CI](https://circleci.com/gh/driftyco/ionic-app-lib.svg?style=svg)](https://circleci.com/gh/driftyco/ionic-app-lib)
+
+[![NPM](https://nodei.co/npm/ionic-app-lib.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/ionic-app-lib/)
+
 ## Getting started
 
 `npm install ionic-app-lib --save`
@@ -39,18 +43,21 @@ Commands to convert:
 
 * [X] start
 * [X] serve
-* [ ] cordova (using cordova-lib)
-  * [ ] run
-  * [ ] emulate
-  * [ ] compile
-  * [ ] build
+* [X] cordova (using cordova-lib)
+  * [X] run
+  * [X] emulate
+  * [X] compile
+  * [X] build
   * [X] add platform
   * [X] remove platform
   * [X] add plugin
   * [X] remove plugin
 * [X] utils
-* [ ] login
-* [ ] upload
+* [X] setup
+* [X] login
+* [X] upload
+* [X] share
+* [ ] push
 * [X] hooks
 * [X] browser
 * [ ] resources

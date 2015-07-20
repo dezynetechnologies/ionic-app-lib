@@ -1,9 +1,12 @@
-var Serve = require('../lib/serve'),
-    Q = require('q'),
+var Q = require('q'),
     events = require('../lib/events'),
-    helpers = require('./helpers');
+    helpers = require('./helpers')
+    Project = require('../lib/project'),
+    rewire = require('rewire');
 
 var defaultServeOptions = {
+  address: '0.0.0.0',
+  appDirectory: '/ionic/app',
   browser: undefined,
   browserOption: '',
   contentSrc: 'www/index.html',
@@ -52,8 +55,10 @@ function compareOptions(options) {
 }
 
 describe('Serve', function() {
+  var Serve;
 
   beforeEach(function() {
+    Serve = rewire('../lib/serve');
     serveArgs = { _: [ 'serve' ], '$0': '/usr/local/bin/ionic' };
   });
 
@@ -73,16 +78,65 @@ describe('Serve', function() {
     expect(Serve.checkForDocumentRoot).toHaveBeenCalledWith(defaultServeOptions);
   });
 
-  describe('loadSettings', function (){
+  describe('#loadSettings', function (){
+    var project;
+    beforeEach(function() {
+      project = Project.wrap('/ionic/project', Project.PROJECT_DEFAULT);
+    });
+
     it('should parse out options from arg hash', function() {
-      var options = Serve.loadSettings(serveArgs);
-      compareOptions(options);
+      try {
+        var options = Serve.loadSettings(serveArgs, project);
+        compareOptions(options);
+      } catch(ex) {
+        console.log(ex);
+      }
     });
 
     it('should have runLivereload to be set to false when flag passed', function() {
       serveArgs.nolivereload = true;
-      var options = Serve.loadSettings(serveArgs);
+      var options = Serve.loadSettings(serveArgs, project);
       expect(options.runLivereload).toBe(false);
+    });
+  });
+
+  describe('#runLivereload', function() {
+    it('should run environment live reload port over options livereload port', function(done) {
+      
+      var vfsSpy = createSpyObj('vfs', ['watch']);
+      Serve.__set__('vfs', vfsSpy);
+
+      var lrServerSpy = createSpy('lrServer');
+      lrServerSpy.listen = function(){}; //hack to add spy
+      spyOn(lrServerSpy, 'listen').andCallFake(function(port, cb) {
+        cb();
+      })
+      var tinylrSpy = createSpy('tinylr').andReturn(lrServerSpy);
+      
+      Serve.__set__('tinylr', tinylrSpy);
+      var lrSpy = createSpy('lr').andReturn({});
+      var th = Serve.__set__('lr', lrSpy);
+      // console.log('th', th);
+      // Serve.__set__('connect-livereload', lrSpy);
+
+      process.env.CONNECT_LIVE_RELOAD_PORT = 15000;
+      var app = createSpyObj('app', ['use']);
+      Q()
+      .then(function(){
+        return Serve.runLivereload(defaultServeOptions, app);
+      })
+      .then(function() {
+        var listenArgs = lrServerSpy.listen.argsForCall[0];
+        // console.log(listenArgs)
+        expect(listenArgs[0]).toBe('15000');
+
+        expect(lrSpy).toHaveBeenCalledWith({port: '15000'});
+        expect(app.use).toHaveBeenCalledWith({});
+      })
+      .catch(function(ex){
+        expect('this').toBe(ex.stack);
+      })
+      .fin(done);
     });
   });
 
